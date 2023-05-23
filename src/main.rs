@@ -4,11 +4,13 @@ extern crate mysql;
 use dotenv::dotenv;
 use mysql::{prelude::Queryable, Pool, Row, Value};
 use std::env;
+use std::fs::File;
+use std::io::Write;
 
 fn main() {
     dotenv().ok(); // .env ファイルをロード
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL_CORE").expect("DATABASE_URL must be set");
 
     let opts = mysql::Opts::from_url(&database_url).unwrap();
     let pool = Pool::new(opts).unwrap();
@@ -39,6 +41,8 @@ fn generate_insert_statements(pool: Pool, table_name: &str, columns: Vec<&str>) 
                 .collect::<Vec<String>>()
         })
         .unwrap();
+    let file_name = format!("{}.sql", table_name);
+    let mut _file = File::create(file_name).expect("ファイルの作成に失敗しました");
 
     for row_values in result {
         // 取得したデータを使ってINSERT文を作成します。
@@ -49,6 +53,9 @@ fn generate_insert_statements(pool: Pool, table_name: &str, columns: Vec<&str>) 
         );
 
         println!("{}", insert_statement);
+        _file
+            .write_all(insert_statement.as_bytes())
+            .expect("ファイルへの書き込みに失敗しました");
     }
 }
 
